@@ -4,47 +4,27 @@ from pymavlink import mavutil
 
 """Solution for test assignment"""
 
-"""Connect to TCP port"""
-vehicle = connect('tcp:127.0.0.1:5762')
 
-vehicle_params = {
-    "Mode": vehicle.mode.name,
-    "Air speed": vehicle.airspeed,
-    "Velocity:": vehicle.velocity,
-    "Is Armed": vehicle.armed,
-}
+def takeoff(target_relative_altitude, mode="GUIDED"):
+    vehicle.mode = VehicleMode(mode)
 
-
-print("Connection check:", vehicle_params)
-
-"""Point A"""
-home_point = LocationGlobal(50.450739, 30.461242, 0.0)
-second_point = LocationGlobal(50.443326, 30.448078, 260.0)
-home_point.alt = 0.0
-vehicle.home_location = home_point
-
-vehicle.airspeed = 11
-target_yaw = 350
-
-
-# Arm and take off to a specified altitude
-def arm_and_takeoff(target_altitude):
-    target_altitude += 160
+    target_relative_altitude += vehicle.location.global_relative_frame.alt
     vehicle.armed = True
 
     while not vehicle.armed:
-        print("Arming")
         time.sleep(1)
 
-    vehicle.simple_takeoff(target_altitude)
-
+    print("Take off")
+    vehicle.simple_takeoff(target_relative_altitude)
     while True:
-        if vehicle.location.global_relative_frame.alt >= target_altitude:
+        if vehicle.location.global_relative_frame.alt >= target_relative_altitude:
             break
         time.sleep(1)
 
 
-def goto(target_point):
+def goto(target_point, mode="GUIDED"):
+    print("Go to second point")
+    vehicle.mode = VehicleMode(mode)
     while True:
         vehicle.simple_goto(target_point)
         if round(vehicle.location.global_frame.lat, 5) == round(target_point.lat, 5):
@@ -52,29 +32,34 @@ def goto(target_point):
 
 
 def yaw_rotation(yaw):
+    print("Yaw rotation")
     msg = vehicle.message_factory.command_long_encode(
-        0, 0,  # target system, target component
-        mavutil.mavlink.MAV_CMD_CONDITION_YAW,  # command
-        0,  # confirmation
-        yaw,  # param 1, yaw in degrees
-        0,  # param 2, pitch
-        0,  # param 3, roll
-        0,  # param 4, relative offset
-        0,  # param 5, absolute offset
-        0,  # param 6, speed
-        0   # param 7, auto continue
+        0, 0,
+        mavutil.mavlink.MAV_CMD_CONDITION_YAW,
+        0,
+        yaw,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
     )
     vehicle.send_mavlink(msg)
 
 
 if __name__ == "__main__":
-    vehicle.mode = VehicleMode("GUIDED")
+    vehicle = connect('tcp:127.0.0.1:5762')
+    vehicle.airspeed = 20
 
-    arm_and_takeoff(100)
-    goto(second_point)
+    point_a = LocationGlobal(50.450739, 30.461242, 0.0)
+    point_b = LocationGlobal(50.443326, 30.448078, 260.0)
+    vehicle.home_location = point_a
+    target_yaw = 350
+
+    takeoff(100)
+    goto(point_b)
     yaw_rotation(target_yaw)
 
-    #time.sleep(10)
-    #print("Returning to launch")
-    #vehicle.mode("RTL")
+    vehicle.mode = VehicleMode("RTL")
     vehicle.close()
