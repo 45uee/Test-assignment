@@ -1,4 +1,4 @@
-from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal, Command
+from dronekit import connect, VehicleMode, LocationGlobal
 import time
 from pymavlink import mavutil
 
@@ -61,5 +61,5 @@ if __name__ == "__main__":
     goto(point_b)
     yaw_rotation(target_yaw)
 
-    vehicle.mode = VehicleMode("RTL")
+    # vehicle.mode = VehicleMode("RTL")
     vehicle.close()
