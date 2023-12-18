@@ -5,19 +5,18 @@ from pymavlink import mavutil
 """Solution for test assignment"""
 
 
-def takeoff(target_relative_altitude, mode="GUIDED"):
+def takeoff(target_altitude, mode="GUIDED"):
     vehicle.mode = VehicleMode(mode)
 
-    target_relative_altitude += vehicle.location.global_relative_frame.alt
     vehicle.armed = True
 
     while not vehicle.armed:
         time.sleep(1)
 
     print("Take off")
-    vehicle.simple_takeoff(target_relative_altitude)
+    vehicle.simple_takeoff(target_altitude)
     while True:
-        if vehicle.location.global_relative_frame.alt >= target_relative_altitude * 0.99:
+        if vehicle.location.global_relative_frame.alt >= target_altitude:
             break
         time.sleep(1)
 
@@ -74,12 +73,13 @@ if __name__ == "__main__":
     vehicle = connect('tcp:127.0.0.1:5762')
     vehicle.airspeed = 20
 
+    target_alt = float(vehicle.location.global_relative_frame.alt) + 100
     point_a = LocationGlobal(50.450739, 30.461242, 0.0)
-    point_b = LocationGlobal(50.443326, 30.448078, 260.0)
+    point_b = LocationGlobal(50.443326, 30.448078, target_alt)
     vehicle.home_location = point_a
     target_yaw = 350
 
-    takeoff(100)
+    takeoff(target_alt)
     goto(point_b)
     yaw_rotation(target_yaw)
 
